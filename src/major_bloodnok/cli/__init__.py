@@ -10,6 +10,7 @@ except ImportError:
     from yaml import Loader
 
 from .db import db
+from .server import server
 
 
 logger = logging.getLogger(__name__)
@@ -29,3 +30,4 @@ def main(ctx):
 
 
 main.add_command(db)
+main.add_command(server)
