@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "major_bloodnok"
+version = "0.1.0"
+description = ""
+authors = ["Mark <mark.hall@work.room3b.eu>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+tornado = "^6.1"
+click = "^8.0.1"
+SQLAlchemy = "^1.4.23"
+PyYAML = "^5.4.1"
+aiosqlite = {version = "^0.17.0", optional = true}
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.14.1"
+flake8 = "^3.9.2"
+flake8-docstrings = "^1.6.0"
+
+[tool.poetry.extras]
+sqlite = ['aiosqlite']
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
