@@ -1,7 +1,7 @@
 """Frontend handler classes."""
 from mimetypes import guess_type
 from importlib import resources
-from tornado.web import RequestHandler, HTTPError
+from tornado.web import RequestHandler
 
 
 class FrontendHandler(RequestHandler):
@@ -20,10 +20,7 @@ class FrontendHandler(RequestHandler):
         try:
             self._get_resource(public, path.split('/')[1:])
         except FileNotFoundError:
-            try:
-                self._get_resource(public, path.split('/')[1:] + ['index.html'])
-            except FileNotFoundError:
-                raise HTTPError(404)
+            self._get_resource(public, ('index.html', ))
 
     def _get_resource(self, resource, path: list[str]):
         """Send a file.
@@ -37,8 +34,11 @@ class FrontendHandler(RequestHandler):
         """
         for part in path:
             resource = resource / part
-        data = resource.read_bytes()
-        mimetype = guess_type(path[-1])
-        if mimetype:
-            self.set_header('Content-Type', mimetype[0])
-        self.write(data)
+        try:
+            data = resource.read_bytes()
+            mimetype = guess_type(path[-1])
+            if mimetype:
+                self.set_header('Content-Type', mimetype[0])
+            self.write(data)
+        except IsADirectoryError:
+            raise FileNotFoundError()
