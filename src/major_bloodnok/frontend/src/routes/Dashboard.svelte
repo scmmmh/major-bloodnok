@@ -25,8 +25,8 @@
     }
 </script>
 
-<h1 class="text-2xl mb-4">Dashboard</h1>
-<ol>
+<h1 class="flex-0 text-2xl px-4 py-3">Dashboard</h1>
+<ol class="flex-1 overflow-auto px-4">
     {#each $dashboard as account}
         <li class="w-full md:w-96 md:inline-block border border-gray-200 px-3 py-2">
             <h2 class="text-xl"><a href="/app/account" use:link>{account.name}</a></h2>

@@ -9,10 +9,8 @@
 <main class="flex flex-col v-screen h-screen">
 	<Router basepath="/app">
 		<MainNav/>
-		<div class="flex-1 overflow-auto px-4 py-4">
-			<Route path="/"><Dashboard/></Route>
-			<Route path="/account"><Account/></Route>
-		</div>
+		<Route path="/"><Dashboard/></Route>
+		<Route path="/account/*"><Account/></Route>
 	</Router>
 </main>
 

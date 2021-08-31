@@ -2,9 +2,9 @@
     import MainNavItem from './MainNavItem.svelte';
 </script>
 
-<nav class="bg-blue-800 px-4">
+<nav class="flex-0 bg-blue-800 px-4">
     <ul class="flex flex-row">
         <MainNavItem href="/">Dashboard</MainNavItem>
-        <MainNavItem href="/account">Account</MainNavItem>
+        <MainNavItem href="/account" exact={false}>Account</MainNavItem>
     </ul>
 </nav>
