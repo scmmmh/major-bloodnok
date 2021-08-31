@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { link } from 'svelte-navigator';
 
     import Chart from '../components/Chart.svelte';
     import { dashboard } from '../store';
@@ -24,11 +25,11 @@
     }
 </script>
 
-<h1>Dashboard</h1>
+<h1 class="text-2xl mb-4">Dashboard</h1>
 <ol>
     {#each $dashboard as account}
-        <li class="w-80">
-            <h2>{account.name}</h2>
+        <li class="w-full md:w-96 md:inline-block border border-gray-200 px-3 py-2">
+            <h2 class="text-xl"><a href="/app/account" use:link>{account.name}</a></h2>
             <Chart labels={account.labels} datasets={convertToDataset(account.income, account.outgoing)}/>
         </li>
     {/each}

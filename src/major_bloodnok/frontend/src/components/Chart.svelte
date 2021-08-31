@@ -48,4 +48,4 @@
     });
 </script>
 
-<canvas bind:this={canvas} class="mt-2"></canvas>
+<canvas bind:this={canvas}></canvas>
