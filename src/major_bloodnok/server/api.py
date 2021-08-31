@@ -62,6 +62,26 @@ class ItemHandler(RequestHandler):
                 raise HTTPError(404)
 
 
+class DashboardCollectionHandler(CollectionHandler):
+    """Collection handler for Dashboards.
+
+    This is currently implemented as a static API.
+    """
+
+    async def get(self):
+        """Fetch all Dashboards."""
+        self.write({
+            'data': [
+                {
+                    'name': 'Account',
+                    'labels': ['June', 'July', 'August'],
+                    'income': [2749.32, 3729.38, 5372.75],
+                    'outgoing': [1739.95, 7328.23, 1733.93],
+                }
+            ]
+        })
+
+
 class TransactionCollectionHandler(CollectionHandler):
     """Collection handler for Transactions."""
 
