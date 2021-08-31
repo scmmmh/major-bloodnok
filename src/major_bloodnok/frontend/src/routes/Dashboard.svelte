@@ -8,20 +8,6 @@
         dashboard.load();
     });
 
-    const labels = ['June', 'July', 'August'];
-    const datasets = [
-            {
-                label: 'Income',
-                data: [10, 12, 3],
-                backgroundColor: '#00aa00',
-            },
-            {
-                label: 'Outgoing',
-                data: [9, 8, 7],
-                backgroundColor: '#dd0000',
-            },
-    ];
-
     function convertToDataset(income: Number[], outgoing: Number[]) {
         return [
             {
