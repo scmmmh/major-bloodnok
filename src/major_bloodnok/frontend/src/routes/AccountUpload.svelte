@@ -2,8 +2,6 @@
     import { useResolve, navigate } from 'svelte-navigator';
     import Dropzone from "svelte-file-dropzone";
 
-    import NavItem from '../components/NavItem.svelte';
-
     const resolve = useResolve();
 
     async function handleFilesSelect(e) {
