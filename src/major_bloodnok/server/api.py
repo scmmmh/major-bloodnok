@@ -5,7 +5,7 @@ import dateparser
 from csv import DictReader
 from datetime import date, timedelta
 from io import StringIO
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, desc
 from tornado.web import RequestHandler, HTTPError
 
 from ..models import create_sessionmaker, Transaction
@@ -25,7 +25,7 @@ class CollectionHandler(RequestHandler):
         """
         self._config = config
 
-    async def get(self, cls):
+    async def get(self, cls, order=None):
         """Fetch all entries of the given ``cls``.
 
         :param cls: The class of objects to fetch
@@ -34,6 +34,8 @@ class CollectionHandler(RequestHandler):
         logger.debug(f'GET {cls.__name__}')
         async with create_sessionmaker(self._config['database']['dsn'])() as session:
             stmt = select(cls)
+            if order is not None:
+                stmt = stmt.order_by(order)
             result = await session.execute(stmt)
             self.write({'data': [item.jsonapi() for item in result.scalars()]})
 
@@ -115,7 +117,7 @@ class TransactionCollectionHandler(CollectionHandler):
 
     async def get(self):
         """Fetch all Transactions."""
-        await super().get(Transaction)
+        await super().get(Transaction, desc(Transaction.date))
 
     async def post(self):
         """Add new Transactions."""
@@ -125,7 +127,7 @@ class TransactionCollectionHandler(CollectionHandler):
                 async with session.begin():
                     for line in DictReader(StringIO(self.request.body.decode())):
                         data = {
-                            'date': dateparser.parse(line['Date']),
+                            'date': dateparser.parse(line['Date'], settings={'PREFER_DAY_OF_MONTH': 'last'}),
                             'description': line['Description'],
                             'initiator': line['Type']
                         }
