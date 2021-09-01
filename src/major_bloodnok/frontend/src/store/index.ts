@@ -1,8 +1,9 @@
 import { dashboard } from './dashboard';
-import { transactions } from './transactions';
+import { transactions, unclassified } from './transactions';
 
 export {
     dashboard,
 
     transactions,
+    unclassified,
 };

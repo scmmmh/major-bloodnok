@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 
 function createTransactionsStore() {
     const { subscribe, set } = writable([]);
@@ -38,3 +38,6 @@ function createTransactionsStore() {
 }
 
 export const transactions = createTransactionsStore();
+export const unclassified = derived(transactions, (transactions) => {
+    return transactions;
+});
