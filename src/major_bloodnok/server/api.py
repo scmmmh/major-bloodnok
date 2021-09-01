@@ -1,7 +1,11 @@
 """API Handlers."""
 import logging
+import dateparser
 
-from sqlalchemy import select
+from csv import DictReader
+from datetime import date, timedelta
+from io import StringIO
+from sqlalchemy import select, and_, func
 from tornado.web import RequestHandler, HTTPError
 
 from ..models import create_sessionmaker, Transaction
@@ -67,19 +71,43 @@ class DashboardCollectionHandler(CollectionHandler):
 
     This is currently implemented as a static API.
     """
+    async def _month_total(self, month, direction, session):
+        stmt = select(func.sum(Transaction.amount)).filter(and_(
+            Transaction.direction == direction,
+            func.DATE(Transaction.date) >= func.DATE(month),
+            func.DATE(Transaction.date) < func.DATE((month + timedelta(days=33)).replace(day=1)),
+        ))
+        result = await session.execute(stmt)
+        return result.scalars().first()
+
+    async def _month_out_total(self, session):
+        pass
 
     async def get(self):
         """Fetch all Dashboards."""
-        self.write({
-            'data': [
-                {
-                    'name': 'Account',
-                    'labels': ['June', 'July', 'August'],
-                    'income': [2749.32, 3729.38, 5372.75],
-                    'outgoing': [1739.95, 7328.23, 1733.93],
-                }
-            ]
-        })
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            month_1 = date.today().replace(day=1)
+            month_2 = (month_1 - timedelta(days=1)).replace(day=1)
+            month_3 = (month_2 - timedelta(days=1)).replace(day=1)
+
+            self.write({
+                'data': [
+                    {
+                        'name': 'Account',
+                        'labels': [month_3.strftime('%B'), month_2.strftime('%B'), month_1.strftime('%B')],
+                        'income': [
+                            await self._month_total(month_3, 'in', session),
+                            await self._month_total(month_2, 'in', session),
+                            await self._month_total(month_1, 'in', session)
+                        ],
+                        'outgoing': [
+                            await self._month_total(month_3, 'out', session),
+                            await self._month_total(month_2, 'out', session),
+                            await self._month_total(month_1, 'out', session)
+                        ],
+                    }
+                ]
+            })
 
 
 class TransactionCollectionHandler(CollectionHandler):
@@ -88,6 +116,37 @@ class TransactionCollectionHandler(CollectionHandler):
     async def get(self):
         """Fetch all Transactions."""
         await super().get(Transaction)
+
+    async def post(self):
+        """Add new Transactions."""
+        logger.debug('POST Transaction')
+        if self.request.headers['Content-Type'] == 'text/csv':
+            async with create_sessionmaker(self._config['database']['dsn'])() as session:
+                async with session.begin():
+                    for line in DictReader(StringIO(self.request.body.decode())):
+                        print(line.keys())
+                        data = {
+                            'date': dateparser.parse(line['Date']),
+                            'description': line['Description'],
+                            'initiator': line['Type']
+                        }
+                        if 'Money In' in line and line['Money In']:
+                            data['amount'] = float(line['Money In'])
+                            data['direction'] = 'in'
+                        elif ' Money Out' in line and line[' Money Out']:
+                            data['amount'] = float(line[' Money Out'])
+                            data['direction'] = 'out'
+                        if line['Type'] == 'TRANSFER':
+                            data['direction'] = 'trans'
+                        if 'amount' in data:
+                            stmt = select(Transaction).filter(and_(
+                                func.DATE(Transaction.date) == func.DATE(data['date']),
+                                Transaction.description == data['description'],
+                                Transaction.amount == data['amount'],
+                                Transaction.direction == data['direction']
+                            ))
+                            if (await session.execute(stmt)).scalars().first() is None:
+                                session.add(Transaction(**data))
 
 
 class TransactionItemHandler(ItemHandler):

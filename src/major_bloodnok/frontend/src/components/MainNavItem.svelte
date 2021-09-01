@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { useLocation, link, useResolve } from "svelte-navigator";
+	import { useLocation, link } from "svelte-navigator";
 
-    const resolve = useResolve();
+    import NavItem from './NavItem.svelte';
+
     const location = useLocation();
     export let href: string;
     export let exact = true;
@@ -9,7 +10,6 @@
     let isCurrent: boolean;
 
     $: {
-        resolvedHref = resolve(href);
         if (exact) {
             isCurrent = $location.pathname === href;
         } else {
@@ -19,5 +19,5 @@
 </script>
 
 <li>
-    <a href={resolvedHref} use:link class="block px-4 py-2 {isCurrent ? 'bg-white text-blue-800' : 'bg-blue-800 text-white'} border-t-2 border-blue-800"><slot></slot></a>
+    <NavItem href={href} class="px-4 py-2 {isCurrent ? 'bg-white text-blue-800' : 'bg-blue-800 text-white'} border-t-2 border-blue-800"><slot></slot></NavItem>
 </li>
