@@ -124,7 +124,6 @@ class TransactionCollectionHandler(CollectionHandler):
             async with create_sessionmaker(self._config['database']['dsn'])() as session:
                 async with session.begin():
                     for line in DictReader(StringIO(self.request.body.decode())):
-                        print(line.keys())
                         data = {
                             'date': dateparser.parse(line['Date']),
                             'description': line['Description'],
