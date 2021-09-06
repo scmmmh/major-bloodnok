@@ -20,7 +20,7 @@
             <li><NavItem href="/account/upload" class="px-3 py-2 {$location.pathname === '/account/upload' ? 'bg-blue-800 text-white' : ''}">Upload</NavItem></li>
         </ul>
     </nav>
-    <div class="flex-1 px-4 overflow-auto">
+    <div class="flex-1 px-4 overflow-hidden">
         <Route path="/"><AccountTransactions/></Route>
         <Route path="/upload"><AccountUpload/></Route>
     </div>

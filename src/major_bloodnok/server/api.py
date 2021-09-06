@@ -36,6 +36,8 @@ class CollectionHandler(RequestHandler):
             stmt = select(cls)
             if order is not None:
                 stmt = stmt.order_by(order)
+            stmt = stmt.offset(int(self.get_argument('page[offset]', '0')))
+            stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
             result = await session.execute(stmt)
             self.write({'data': [item.jsonapi() for item in result.scalars()]})
 

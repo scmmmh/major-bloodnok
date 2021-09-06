@@ -2,6 +2,8 @@
     import { useResolve, navigate } from 'svelte-navigator';
     import Dropzone from "svelte-file-dropzone";
 
+    import { transactions } from '../store';
+
     const resolve = useResolve();
 
     async function handleFilesSelect(e) {
@@ -16,6 +18,7 @@
                 body: data
             });
         }
+        transactions.reset();
         navigate(resolve('/account'));
     }
 </script>

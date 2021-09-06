@@ -1,14 +1,15 @@
 import { writable, derived } from "svelte/store";
 
 function createTransactionsStore() {
-    const { subscribe, set } = writable([]);
+    const { subscribe, set update } = writable([]);
     let loading = false;
+    let offset = 0;
 
     async function load() {
         if (!loading) {
             loading = true;
             try {
-                const response = await fetch('/api/transactions');
+                const response = await fetch('/api/transactions?page[offset]=' + offset + '&page[limit]=30');
                 if (response.ok) {
                     const data = (await response.json()).data;
                     for (const entry of data) {
@@ -19,7 +20,12 @@ function createTransactionsStore() {
                         date.setDate(parseInt(parts[2]));
                         entry.attributes.date = date;
                     }
-                    set(data);
+                    update((existing) => {
+                        return existing.concat(data);
+                    });
+                    if (data.length > 0) {
+                        offset = offset + data.length;
+                    }
                 }
                 loading = false;
             } catch(e) {
@@ -29,11 +35,18 @@ function createTransactionsStore() {
         }
     }
 
+    async function reset() {
+        set([]);
+        offset = 0;
+        await load();
+    }
+
     load();
 
     return {
         subscribe,
         load,
+        reset,
     }
 }
 
