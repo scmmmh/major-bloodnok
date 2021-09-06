@@ -1,7 +1,7 @@
 import { writable, derived } from "svelte/store";
 
 function createTransactionsStore() {
-    const { subscribe, set update } = writable([]);
+    const { subscribe, set, update } = writable([]);
     let loading = false;
     let offset = 0;
 
