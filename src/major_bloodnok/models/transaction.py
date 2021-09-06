@@ -1,5 +1,5 @@
 """Database model for account transactions."""
-from sqlalchemy import Column, Integer, Date, Float, String
+from sqlalchemy import Column, Integer, Date, Float, String, ForeignKey
 
 from .meta import Base
 
@@ -10,6 +10,7 @@ class Transaction(Base):
     __tablename__ = 'transactions'
 
     id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, ForeignKey('categories.id'))
     date = Column(Date)
     description = Column(String(255))
     amount = Column(Float)
@@ -27,5 +28,13 @@ class Transaction(Base):
                 'amount': self.amount,
                 'direction': self.direction,
                 'initiator': self.initiator
+            },
+            'relationships': {
+                'category': {
+                    'data': {
+                        'type': 'categories',
+                        'id': str(self.category_id)
+                    }
+                }
             }
         }

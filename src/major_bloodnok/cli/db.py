@@ -3,7 +3,9 @@ import asyncio
 import click
 import logging
 
-from ..models import create_engine, Base
+from sqlalchemy import select
+
+from ..models import create_engine, create_sessionmaker, Base, Category
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,12 @@ async def cmd_init(config: dict, drop_existing: bool):
             await conn.run_sync(Base.metadata.drop_all)
         logger.debug('Creating the database')
         await conn.run_sync(Base.metadata.create_all)
+        async with create_sessionmaker(config['database']['dsn'])() as session:
+            async with session.begin():
+                stmt = select(Category).filter(Category.title == 'Uncategorised')
+                result = await conn.execute(stmt)
+                if not result.scalars().first():
+                    session.add(Category(title='Uncategorised', parent_id=None))
     logger.debug('Database created')
 
 

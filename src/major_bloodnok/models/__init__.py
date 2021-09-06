@@ -6,6 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from .meta import Base  # noqa
 from .transaction import Transaction  # noqa
+from .category import Category  # noqa
+from .rule import Rule  # noqa
 
 
 logger = logging.getLogger(__name__)

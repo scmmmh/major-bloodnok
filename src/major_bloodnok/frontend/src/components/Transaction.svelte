@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { categories } from '../store';
+
     export let transaction: Transaction;
 
     function monthStr(month: number) {
@@ -45,6 +47,9 @@
 </div>
 <div class="flex-1">
     <p class="text-lg">{transaction.attributes.description}</p>
+    <ol>
+        <li class="inline-block px-2 rounded bg-blue-700 text-white">{#await categories.lookup(transaction.relationships.category.data.id)}Loading...{:then value}{value.attributes.title}{:catch err}Failed{/await}</li>
+    </ol>
 </div>
 <div class="w-32 text-xl font-bold text-right pr-4 self-center {transaction.attributes.direction === 'in' ? 'text-green-600' : ''}">
     &pound; {amountFormat(transaction.attributes.direction, transaction.attributes.amount)}

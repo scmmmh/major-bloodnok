@@ -8,7 +8,7 @@ from io import StringIO
 from sqlalchemy import select, and_, func, desc
 from tornado.web import RequestHandler, HTTPError
 
-from ..models import create_sessionmaker, Transaction
+from ..models import create_sessionmaker, Transaction, Category
 
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,9 @@ class CollectionHandler(RequestHandler):
             stmt = select(cls)
             if order is not None:
                 stmt = stmt.order_by(order)
-            stmt = stmt.offset(int(self.get_argument('page[offset]', '0')))
-            stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
+            if self.get_argument('page[offset]', default=None):
+                stmt = stmt.offset(int(self.get_argument('page[offset]', '0')))
+                stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
             result = await session.execute(stmt)
             self.write({'data': [item.jsonapi() for item in result.scalars()]})
 
@@ -65,7 +66,7 @@ class ItemHandler(RequestHandler):
             result = await session.execute(stmt)
             obj = result.scalars().first()
             if obj:
-                self.write({'data': obj})
+                self.write({'data': obj.jsonapi()})
             else:
                 raise HTTPError(404)
 
@@ -127,6 +128,8 @@ class TransactionCollectionHandler(CollectionHandler):
         if self.request.headers['Content-Type'] == 'text/csv':
             async with create_sessionmaker(self._config['database']['dsn'])() as session:
                 async with session.begin():
+                    unclassified = (await session.execute(select(Category).
+                                    filter(Category.title == 'Uncategorised'))).scalars().first()
                     for line in DictReader(StringIO(self.request.body.decode())):
                         data = {
                             'date': dateparser.parse(line['Date'], settings={'PREFER_DAY_OF_MONTH': 'last'}),
@@ -141,6 +144,7 @@ class TransactionCollectionHandler(CollectionHandler):
                             data['direction'] = 'out'
                         if line['Type'] == 'TRANSFER':
                             data['direction'] = 'trans'
+                        data['category_id'] = unclassified.id
                         if 'amount' in data:
                             stmt = select(Transaction).filter(and_(
                                 func.DATE(Transaction.date) == func.DATE(data['date']),
@@ -158,3 +162,39 @@ class TransactionItemHandler(ItemHandler):
     async def get(self, id):
         """Fetch the Transaction with the given ``id``."""
         await super().get(Transaction, id)
+
+
+class UncategorisedTransactionCollectionHandler(CollectionHandler):
+    """Collection handler for uncategorised Transactions."""
+
+    async def get(self):
+        """Fetch all uncategorised Transactions."""
+        logger.debug('GET uncategorised Transaction')
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            stmt = select(Category).filter(Category.title == 'Uncategorised')
+            uncategorised = (await session.execute(stmt)).scalars().first()
+            if uncategorised:
+                stmt = select(Transaction).order_by(desc(Transaction.date))
+                if self.get_argument('page[offset]', default=None):
+                    stmt = stmt.offset(int(self.get_argument('page[offset]', '0')))
+                    stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
+                result = await session.execute(stmt)
+                self.write({'data': [item.jsonapi() for item in result.scalars()]})
+            else:
+                self.write({'data': []})
+
+
+class CategoriesCollectionHandler(CollectionHandler):
+    """Collection handler for Categories."""
+
+    async def get(self):
+        """Get all Categories."""
+        await super().get(Category)
+
+
+class CategoriesItemHandler(ItemHandler):
+    """Item handler for Categories."""
+
+    async def get(self, id):
+        """Get a single Category with the given ``id``."""
+        await super().get(Category, id)

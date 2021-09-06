@@ -5,7 +5,8 @@ import logging
 from tornado.web import Application, RedirectHandler
 
 from .frontend import FrontendHandler
-from .api import DashboardCollectionHandler, TransactionCollectionHandler, TransactionItemHandler
+from .api import (DashboardCollectionHandler, TransactionCollectionHandler, TransactionItemHandler,
+                  UncategorisedTransactionCollectionHandler, CategoriesCollectionHandler, CategoriesItemHandler)
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,10 @@ def run_server(config):
             ('/app(.*)', FrontendHandler),
             ('/api/dashboards', DashboardCollectionHandler, {'config': config}),
             ('/api/transactions', TransactionCollectionHandler, {'config': config}),
-            ('/api/transactions/(?P<id>[0-9]+)', TransactionItemHandler, {'config': config})
+            ('/api/transactions/(?P<id>[0-9]+)', TransactionItemHandler, {'config': config}),
+            ('/api/uncategorised', UncategorisedTransactionCollectionHandler, {'config': config}),
+            ('/api/categories', CategoriesCollectionHandler, {'config': config}),
+            ('/api/categories/(?P<id>[0-9]+)', CategoriesItemHandler, {'config': config})
         ],
         debug=True
     )
