@@ -3,6 +3,7 @@
 
     import NavItem from '../components/NavItem.svelte';
     import AccountTransactions from './AccountTransactions.svelte';
+    import AccountClassify from './AccountClassify.svelte'
     import AccountUpload from './AccountUpload.svelte';
     import { unclassified } from '../store';
 
@@ -22,6 +23,7 @@
     </nav>
     <div class="flex-1 px-4 overflow-hidden">
         <Route path="/"><AccountTransactions/></Route>
+        <Route path="/classify"><AccountClassify/></Route>
         <Route path="/upload"><AccountUpload/></Route>
     </div>
 </div>
