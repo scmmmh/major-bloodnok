@@ -39,6 +39,15 @@
         result = result + amount.toFixed(2);
         return result;
     }
+
+    async function categoryHierarchyList(id: string): Promise<Category[]> {
+        const category = await categories.lookup(id);
+        if (category.relationships.parent) {
+            return (await categoryHierarchyList(category.relationships.parent.data.id)).concat([category]);
+        } else {
+            return [category];
+        }
+    }
 </script>
 
 <div class="w-28 text-center">
@@ -47,9 +56,13 @@
 </div>
 <div class="flex-1">
     <p class="text-lg">{transaction.attributes.description}</p>
-    <ol>
-        <li class="inline-block px-2 rounded bg-blue-700 text-white">{#await categories.lookup(transaction.relationships.category.data.id)}Loading...{:then value}{value.attributes.title}{:catch err}Failed{/await}</li>
-    </ol>
+    {#await categoryHierarchyList(transaction.relationships.category.data.id) then categoryList}
+        <ol>
+            {#each categoryList as category}
+                <li class="inline-block px-2 rounded bg-blue-700 text-white">{category.attributes.title}</li>
+            {/each}
+        </ol>
+    {/await}
 </div>
 <div class="w-32 text-xl font-bold text-right pr-4 self-center {transaction.attributes.direction === 'in' ? 'text-green-600' : ''}">
     &pound; {amountFormat(transaction.attributes.direction, transaction.attributes.amount)}

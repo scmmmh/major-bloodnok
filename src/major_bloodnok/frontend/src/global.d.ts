@@ -25,7 +25,7 @@ interface JSONAPIItemRelationshipData {
 }
 
 interface Transaction {
-    type: string;
+    type: 'transactions';
     id: string;
     attributes: TransactionAttributes;
     relationships: JSONAPIItemRelationships;
@@ -38,4 +38,19 @@ interface TransactionAttributes {
     amount: number;
     direction: string;
     initiator: string
+}
+
+interface Category {
+    type: 'categories';
+    id: string;
+    attributes: CategoryAttributes;
+    relationships: CategoryRelationships;
+}
+
+interface CategoryAttributes {
+    title: string;
+}
+
+interface CategoryRelationships {
+    parent?: JSONAPIItemRelationship;
 }

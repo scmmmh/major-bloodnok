@@ -15,18 +15,20 @@ class Category(Base):
 
     def jsonapi(self):
         """Return the Transaction in JSONAPI format."""
-        return {
+        obj = {
             'type': 'categories',
             'id': str(self.id),
             'attributes': {
                 'title': self.title
             },
             'relationships': {
-                'parent': {
-                    'data': {
-                        'type': 'categories',
-                        'id': str(self.parent_id)
-                    }
-                }
             }
         }
+        if self.parent_id is not None:
+            obj['relationships']['parent'] = {
+                'data': {
+                    'type': 'categories',
+                    'id': str(self.parent_id)
+                }
+            }
+        return obj
