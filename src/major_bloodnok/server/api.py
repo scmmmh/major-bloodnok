@@ -1,6 +1,7 @@
 """API Handlers."""
 import logging
 import dateparser
+import re
 
 from csv import DictReader
 from datetime import date, timedelta
@@ -8,10 +9,22 @@ from io import StringIO
 from sqlalchemy import select, and_, func, desc
 from tornado.web import RequestHandler, HTTPError
 
-from ..models import create_sessionmaker, Transaction, Category
+from ..models import create_sessionmaker, Transaction, Category, Rule
 
 
 logger = logging.getLogger(__name__)
+
+
+async def apply_rule(session, rule):
+    async with session.begin():
+        uncategorised = (await session.execute(select(Category).
+                         filter(Category.title == 'Uncategorised'))).scalars().first()
+        transactions = (await session.execute(select(Transaction).
+                        filter(Transaction.category_id == uncategorised.id))).scalars()
+        for transaction in transactions:
+            if re.match(rule.description, transaction.description) and rule.direction == transaction.direction:
+                transaction.category_id = rule.category_id
+                session.add(transaction)
 
 
 class CollectionHandler(RequestHandler):
@@ -41,6 +54,20 @@ class CollectionHandler(RequestHandler):
                 stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
             result = await session.execute(stmt)
             self.write({'data': [item.jsonapi() for item in result.scalars()]})
+
+    async def post(self, cls):
+        """Create a new instance of the given ``cls``.
+
+        :param cls: The class of object to create
+        :type cls: class
+        """
+        logger.debug(f'POST {cls.__name__}')
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            async with session.begin():
+                obj = cls.from_jsonapi(self.request.body)
+                session.add(obj)
+            self.write({'data': obj.jsonapi()})
+        return obj
 
 
 class ItemHandler(RequestHandler):
@@ -174,7 +201,8 @@ class UncategorisedTransactionCollectionHandler(CollectionHandler):
             stmt = select(Category).filter(Category.title == 'Uncategorised')
             uncategorised = (await session.execute(stmt)).scalars().first()
             if uncategorised:
-                stmt = select(Transaction).order_by(desc(Transaction.date))
+                stmt = select(Transaction).filter(Transaction.category_id == uncategorised.id).\
+                    order_by(desc(Transaction.date))
                 if self.get_argument('page[offset]', default=None):
                     stmt = stmt.offset(int(self.get_argument('page[offset]', '0')))
                     stmt = stmt.limit(int(self.get_argument('page[limit]', '30')))
@@ -191,6 +219,10 @@ class CategoriesCollectionHandler(CollectionHandler):
         """Get all Categories."""
         await super().get(Category)
 
+    async def post(self):
+        """Create a new Category."""
+        await super().post(Category)
+
 
 class CategoriesItemHandler(ItemHandler):
     """Item handler for Categories."""
@@ -198,3 +230,17 @@ class CategoriesItemHandler(ItemHandler):
     async def get(self, id):
         """Get a single Category with the given ``id``."""
         await super().get(Category, id)
+
+
+class RulesCollectionHandler(CollectionHandler):
+    """Collection handler for Rules."""
+
+    async def get(self):
+        """Get all Rules."""
+        await super().get(Rule)
+
+    async def post(self):
+        """Create a new Rule."""
+        rule = await super().post(Rule)
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            await apply_rule(session, rule)

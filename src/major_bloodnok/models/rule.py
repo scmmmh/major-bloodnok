@@ -1,4 +1,6 @@
 """Database model for account categorisation rules."""
+import json
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 from .meta import Base
@@ -14,13 +16,20 @@ class Rule(Base):
     description = Column(String(255))
     direction = Column(String(255))
 
+    @classmethod
+    def from_jsonapi(cls, body):
+        data = json.loads(body)
+        return Rule(description=data['attributes']['pattern'],
+                    direction=data['attributes']['direction'],
+                    category_id=data['relationships']['category']['data']['id'])
+
     def jsonapi(self):
         """Return the Rule in JSONAPI format."""
         return {
             'type': 'rules',
             'id': str(self.id),
             'attributes': {
-                'date': self.description,
+                'pattern': self.description,
                 'direction': self.direction
             },
             'relationships': {

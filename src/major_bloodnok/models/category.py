@@ -1,4 +1,6 @@
 """Database model for account categories."""
+import json
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 from .meta import Base
@@ -12,6 +14,11 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey('categories.id'))
     title = Column(String(255))
+
+    @classmethod
+    def from_jsonapi(cls, body):
+        data = json.loads(body)
+        return Category(title=data['attributes']['title'])
 
     def jsonapi(self):
         """Return the Transaction in JSONAPI format."""

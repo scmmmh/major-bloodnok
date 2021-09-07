@@ -23,7 +23,7 @@ async function uniqueFetch(url: string) {
 }
 
 function createJSONAPIStore(cls) {
-    const categories = writable({});
+    const categories = writable({} as {[x:string]: Category});
     let loading = false;
 
     async function load() {
@@ -35,7 +35,7 @@ function createJSONAPIStore(cls) {
                 if (response.ok) {
                     const data = (await response.json()).data as JSONAPIItem[];
                     categories.set(Object.fromEntries(data.map((category) => {
-                        return [category.id, category];
+                        return [category.id, category as unknown as Category];
                     })));
                 }
                 loading = false;
