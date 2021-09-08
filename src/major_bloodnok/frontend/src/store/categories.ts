@@ -55,7 +55,7 @@ function createJSONAPIStore(cls) {
             categories.update((categories) => {
                 categories[id] = item;
                 return categories;
-            })
+            });
             return item;
         }
     }
@@ -73,11 +73,71 @@ function createJSONAPIStore(cls) {
         }
     }
 
+    async function create(title: string, parentId: string) {
+        let obj = {
+            'type': 'categories',
+            'id': '',
+            'attributes': {
+                'title': title,
+            }
+        } as JSONAPIItem;
+        if (parentId !== '') {
+            obj['relationships'] = {
+                'parent': {
+                    'data': {
+                        'type': 'categories',
+                        'id': parentId
+                    }
+                }
+            }
+        }
+        const response = await fetch('/api/categories', {
+            method: 'POST',
+            body: JSON.stringify(obj)
+        });
+        obj = (await response.json()).data;
+        categories.update((categories) => {
+            categories[obj.id] = obj as unknown as Category;
+            return categories;
+        });
+    }
+
+    async function update(id:string, title: string, parentId: string) {
+        let obj = {
+            'type': 'categories',
+            'id': id,
+            'attributes': {
+                'title': title,
+            }
+        } as JSONAPIItem;
+        if (parentId !== '') {
+            obj['relationships'] = {
+                'parent': {
+                    'data': {
+                        'type': 'categories',
+                        'id': parentId
+                    }
+                }
+            }
+        }
+        const response = await fetch('/api/categories/' + id, {
+            method: 'PUT',
+            body: JSON.stringify(obj)
+        });
+        obj = (await response.json()).data;
+        categories.update((categories) => {
+            categories[obj.id] = obj as unknown as Category;
+            return categories;
+        });
+    }
+
     return {
         subscribe: categories.subscribe,
         load,
         loadSingle,
         lookup,
+        create,
+        update,
     }
 }
 

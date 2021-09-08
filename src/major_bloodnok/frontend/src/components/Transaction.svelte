@@ -59,7 +59,7 @@
     {#await categoryHierarchyList(transaction.relationships.category.data.id) then categoryList}
         <ol>
             {#each categoryList as category}
-                <li class="inline-block px-2 rounded bg-blue-700 text-white">{category.attributes.title}</li>
+                <li class="inline-block px-2 rounded bg-blue-700 text-white mr-2">{category.attributes.title}</li>
             {/each}
         </ol>
     {/await}

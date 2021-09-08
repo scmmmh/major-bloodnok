@@ -97,6 +97,25 @@ class ItemHandler(RequestHandler):
             else:
                 raise HTTPError(404)
 
+    async def put(self, cls, id):
+        """Update the entry of the given ``cls`` with the given ``id``.
+
+        :param cls: The class of objects to fetch
+        :type cls: class
+        """
+        logger.debug(f'PUT {cls.__name__} {id}')
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            async with session.begin():
+                stmt = select(cls).filter(getattr(cls, 'id') == id)
+                result = await session.execute(stmt)
+                obj = result.scalars().first()
+                if obj:
+                    new_obj = cls.from_jsonapi(self.request.body)
+                    obj.update(new_obj)
+                    self.write({'data': obj.jsonapi()})
+                else:
+                    raise HTTPError(404)
+
 
 class DashboardCollectionHandler(CollectionHandler):
     """Collection handler for Dashboards.
@@ -230,6 +249,10 @@ class CategoriesItemHandler(ItemHandler):
     async def get(self, id):
         """Get a single Category with the given ``id``."""
         await super().get(Category, id)
+
+    async def put(self, id):
+        """Update a single Category with the given ``id``."""
+        await super().put(Category, id)
 
 
 class RulesCollectionHandler(CollectionHandler):

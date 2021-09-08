@@ -18,7 +18,14 @@ class Category(Base):
     @classmethod
     def from_jsonapi(cls, body):
         data = json.loads(body)
-        return Category(title=data['attributes']['title'])
+        obj = Category(title=data['attributes']['title'])
+        if 'relationships' in data and 'parent' in data['relationships']:
+            obj.parent_id = data['relationships']['parent']['data']['id']
+        return obj
+
+    def update(self, new_obj):
+        self.title = new_obj.title
+        self.parent_id = new_obj.parent_id
 
     def jsonapi(self):
         """Return the Transaction in JSONAPI format."""

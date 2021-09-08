@@ -1,6 +1,6 @@
 <script lang="ts">
     import TransactionComponent from '../components/Transaction.svelte';
-    import { unclassified, categories } from '../store';
+    import { unclassified, categories, transactions } from '../store';
 
     let selectedTransaction = null as Transaction;
     let newRulePattern = '';
@@ -56,6 +56,7 @@
             selectedTransaction = null;
             await unclassified.reset();
             await categories.load();
+            await transactions.reset();
         }
     }
 

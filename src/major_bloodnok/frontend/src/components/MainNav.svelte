@@ -6,5 +6,6 @@
     <ul class="flex flex-row">
         <MainNavItem href="/">Dashboard</MainNavItem>
         <MainNavItem href="/account" exact={false}>Account</MainNavItem>
+        <MainNavItem href="/categories">Categories</MainNavItem>
     </ul>
 </nav>
