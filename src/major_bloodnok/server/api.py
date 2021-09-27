@@ -267,3 +267,105 @@ class RulesCollectionHandler(CollectionHandler):
         rule = await super().post(Rule)
         async with create_sessionmaker(self._config['database']['dsn'])() as session:
             await apply_rule(session, rule)
+
+
+class AnalysisTimePeriodsCollectionHandler(CollectionHandler):
+    """Collection handler for analysis time-periods"""
+
+    async def get(self):
+        """Get all analysis time-periods."""
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            stmt = select(Transaction.date)
+            result = await session.execute(stmt)
+            today = date.today()
+            years = set()
+            months = set()
+            for transaction in result.scalars():
+                years.add(str(transaction.year))
+                months.add(f'{transaction.year}-{transaction.month:02}')
+            items = []
+            tmp = list(months)
+            tmp.sort(reverse=True)
+            for item in tmp[:6]:
+                items.append({
+                    'type': 'analysis-time-periods',
+                    'id': item,
+                    'attributes': {
+                        'value': item,
+                        'label': 'This month' if item == f'{today.year}-{today.month:02}' else item
+                    }
+                })
+            tmp = list(years)
+            tmp.sort()
+            for item in tmp:
+                items.append({
+                    'type': 'analysis-time-periods',
+                    'id': item,
+                    'attributes': {
+                        'value': item,
+                        'label': 'This year' if item == str(today.year) else item
+                    }
+                })
+            self.write({'data': items})
+
+
+class AnalysisCollectionHandler(CollectionHandler):
+    """Collection handler for the analysis"""
+
+    def initialize(self, config):
+        """Initialise with the given ``config``.
+
+        :param config: The configuration to use
+        :type config: dict
+        """
+        super().initialize(config)
+        self._category_id_lists = {}
+
+    async def _get_category_ids(self, session, category_id):
+        if category_id in self._category_id_lists:
+            return self._category_id_lists[category_id]
+        else:
+            stmt = select(Category).filter(Category.id == category_id)
+            result = await session.execute(stmt)
+            category = result.scalars().first()
+            if category.parent_id is None:
+                self._category_id_lists[category_id] = [category.id]
+            else:
+                self._category_id_lists[category_id] = [category.id] + \
+                    await self._get_category_ids(session, category.parent_id)
+            return self._category_id_lists[category_id]
+
+    async def get(self):
+        """Get the analysis results."""
+        async with create_sessionmaker(self._config['database']['dsn'])() as session:
+            stmt = select(Category)
+            result = await session.execute(stmt)
+            categories = {}
+            for category in result.scalars():
+                if category.parent_id is None:
+                    categories[category.id] = {
+                        'type': 'analysis',
+                        'id': str(category.id),
+                        'attributes': {
+                            'title': category.title,
+                            'amount': 0
+                        }
+                    }
+            stmt = select(Transaction).filter(Transaction.direction == self.get_argument('filter[direction]'))
+            if '-' in self.get_argument('filter[timePeriod]'):
+                year, month = self.get_argument('filter[timePeriod]').split('-')
+                start_date = date(int(year), int(month), 1)
+                end_date = (start_date + timedelta(days=32)).replace(day=1)
+            else:
+                start_date = date(int(self.get_argument('filter[timePeriod]')), 1, 1)
+                end_date = (start_date + timedelta(days=370)).replace(day=1)
+            stmt = stmt.filter(and_(Transaction.date >= start_date, Transaction.date < end_date))
+            result = await session.execute(stmt)
+            for transaction in result.scalars():
+                for category_id in await self._get_category_ids(session, transaction.category_id):
+                    if category_id in categories:
+                        categories[category_id]['attributes']['amount'] = \
+                            categories[category_id]['attributes']['amount'] + transaction.amount
+            items = [item for item in categories.values() if item['attributes']['amount'] > 0]
+            items.sort(key=lambda item: item['attributes']['amount'], reverse=True)
+            self.write({'data': items})

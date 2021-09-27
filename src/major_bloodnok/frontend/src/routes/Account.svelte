@@ -5,6 +5,7 @@
     import AccountTransactions from './AccountTransactions.svelte';
     import AccountCategorise from './AccountCategorise.svelte'
     import AccountUpload from './AccountUpload.svelte';
+    import AccountAnalysis from './AccountAnalysis.svelte';
     import { unclassified } from '../store';
 
     const location = useLocation();
@@ -15,6 +16,7 @@
     <nav class="flex-0 w-48 bg-blue-200">
         <ul>
             <li><NavItem href="/account" class="px-3 py-2 {$location.pathname === '/account' ? 'bg-blue-800 text-white' : ''}">Transactions</NavItem></li>
+            <li><NavItem href="/account/analysis" class="px-3 py-2 {$location.pathname === '/account/analysis' ? 'bg-blue-800 text-white' : ''}">Analysis</NavItem></li>
             {#if $unclassified.length > 0}
                 <li><NavItem href="/account/classify" class="px-3 py-2 {$location.pathname === '/account/classify' ? 'bg-blue-800 text-white' : ''}">Categorise</NavItem></li>
             {/if}
@@ -23,6 +25,7 @@
     </nav>
     <div class="flex-1 px-4 overflow-hidden">
         <Route path="/"><AccountTransactions/></Route>
+        <Route path="/analysis"><AccountAnalysis/></Route>
         <Route path="/classify"><AccountCategorise/></Route>
         <Route path="/upload"><AccountUpload/></Route>
     </div>
